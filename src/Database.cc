@@ -607,7 +607,22 @@ Database::query (const PinyinArray &pinyin,
                                        "s%d=%d", i, p->pinyin_id[0].sheng);
         }
 
-        if (p->pinyin_id[0].yun != PINYIN_ID_ZERO) {
+        if ((p->flags & PINYIN_INCOMPLETE_PINYIN) &&
+            p->pinyin_id[0].sheng == PINYIN_ID_ZERO &&
+            p->pinyin_id[0].yun != PINYIN_ID_ZERO) {
+            /* Zero-initial incomplete pinyin: expand yun to cover all finals
+             * in the same vowel series (a→a/ai/an/ang/ao, etc.) */
+            int yun_end = p->pinyin_id[0].yun;
+            switch (p->pinyin_id[0].yun) {
+            case PINYIN_ID_A: yun_end = PINYIN_ID_AO; break;
+            case PINYIN_ID_E: yun_end = PINYIN_ID_ER; break;
+            case PINYIN_ID_O: yun_end = PINYIN_ID_OU; break;
+            }
+            conditions.appendPrintf (0, conditions.size (),
+                                       " AND y%d>=%d AND y%d<=%d",
+                                       i, p->pinyin_id[0].yun, i, yun_end);
+        }
+        else if (p->pinyin_id[0].yun != PINYIN_ID_ZERO) {
             if (pinyin_option_check_yun (option, p->pinyin_id[0].yun, p->pinyin_id[1].yun)) {
                 if (G_LIKELY (i < DB_INDEX_SIZE)) {
                     conditions.double_ ();

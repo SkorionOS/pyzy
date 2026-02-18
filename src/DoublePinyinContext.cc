@@ -358,6 +358,36 @@ DoublePinyinContext::isPinyin (int i)
         return NULL;
     }
 
+    if (sheng == PINYIN_ID_ZERO && i >= 0 && i <= 25) {
+        static const Pinyin incomplete_a = {
+            "a", L"\x311A", "", "a",
+            {{ PINYIN_ID_ZERO, PINYIN_ID_A },
+             { PINYIN_ID_ZERO, PINYIN_ID_ZERO },
+             { PINYIN_ID_ZERO, PINYIN_ID_ZERO }},
+            1, PINYIN_INCOMPLETE_PINYIN
+        };
+        static const Pinyin incomplete_e = {
+            "e", L"\x311C", "", "e",
+            {{ PINYIN_ID_ZERO, PINYIN_ID_E },
+             { PINYIN_ID_ZERO, PINYIN_ID_ZERO },
+             { PINYIN_ID_ZERO, PINYIN_ID_ZERO }},
+            1, PINYIN_INCOMPLETE_PINYIN
+        };
+        static const Pinyin incomplete_o = {
+            "o", L"\x311B", "", "o",
+            {{ PINYIN_ID_ZERO, PINYIN_ID_O },
+             { PINYIN_ID_ZERO, PINYIN_ID_ZERO },
+             { PINYIN_ID_ZERO, PINYIN_ID_ZERO }},
+            1, PINYIN_INCOMPLETE_PINYIN
+        };
+        switch ('a' + i) {
+        case 'a': return &incomplete_a;
+        case 'e': return &incomplete_e;
+        case 'o': return &incomplete_o;
+        }
+        return NULL;
+    }
+
     return PinyinParser::isPinyin (sheng, 0, PINYIN_INCOMPLETE_PINYIN);
 }
 
@@ -510,7 +540,8 @@ DoublePinyinContext::updatePinyin (bool all)
     if (m_pinyin_len < m_cursor) {
         size_t len = m_pinyin_len;
         if (m_pinyin.empty () == false &&
-            m_pinyin.back ()->flags & PINYIN_INCOMPLETE_PINYIN) {
+            (m_pinyin.back ()->flags & PINYIN_INCOMPLETE_PINYIN ||
+             m_pinyin.back ()->len == 1)) {
             const Pinyin *pinyin = isPinyin (
                 ID (m_text[m_pinyin_len -1]),ID (m_text[m_pinyin_len]));
             if (pinyin) {
@@ -532,7 +563,8 @@ DoublePinyinContext::updatePinyin (bool all)
             }
             if (pinyin == NULL)
                 break;
-            if (pinyin->flags & PINYIN_INCOMPLETE_PINYIN) {
+            if ((pinyin->flags & PINYIN_INCOMPLETE_PINYIN) ||
+                pinyin->len == 1) {
                 m_pinyin.append (pinyin, m_pinyin_len, 1);
                 m_pinyin_len += 1;
             }
