@@ -368,6 +368,44 @@ DoublePinyinContext::isPinyin (int i, int j)
     signed char sheng = ID_TO_SHENG (i);
     const signed char *yun = ID_TO_YUNS (j);
 
+    /* For zero-initial syllables, try interpreting the two keys as a literal
+     * two-letter final before consulting the double-pinyin yun table.
+     * Standard rule: two-letter finals use first letter + last letter,
+     * e.g. 'a'+'n' → "an", 'e'+'i' → "ei", 'o'+'u' → "ou". */
+    if (sheng == PINYIN_ID_ZERO && i >= 0 && i <= 25 && j >= 0 && j <= 25) {
+        char c1 = 'a' + i;
+        char c2 = 'a' + j;
+        int directYun = PINYIN_ID_VOID;
+        switch (c1) {
+        case 'a':
+            switch (c2) {
+            case 'i': directYun = PINYIN_ID_AI; break;
+            case 'n': directYun = PINYIN_ID_AN; break;
+            case 'o': directYun = PINYIN_ID_AO; break;
+            }
+            break;
+        case 'e':
+            switch (c2) {
+            case 'i': directYun = PINYIN_ID_EI; break;
+            case 'n': directYun = PINYIN_ID_EN; break;
+            case 'r': directYun = PINYIN_ID_ER; break;
+            }
+            break;
+        case 'o':
+            switch (c2) {
+            case 'u': directYun = PINYIN_ID_OU; break;
+            }
+            break;
+        }
+        if (directYun != PINYIN_ID_VOID) {
+            pinyin = PinyinParser::isPinyin (
+                PINYIN_ID_ZERO, directYun,
+                m_config.option & (PINYIN_FUZZY_ALL | PINYIN_CORRECT_V_TO_U));
+            if (pinyin != NULL)
+                return pinyin;
+        }
+    }
+
     do {
         if (sheng == PINYIN_ID_VOID || yun[0] == PINYIN_ID_VOID)
             break;
