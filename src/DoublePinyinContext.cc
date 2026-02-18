@@ -406,6 +406,28 @@ DoublePinyinContext::isPinyin (int i, int j)
         }
     }
 
+    /* For zero-initial, block two-letter finals from the yun table lookup.
+     * They must be entered via literal keys (handled above), not via the
+     * double-pinyin yun mapping. Only single/three-letter finals are allowed
+     * through the yun table for zero-initial syllables. */
+    signed char filteredYun[2] = { yun[0], yun[1] };
+    if (sheng == PINYIN_ID_ZERO) {
+        for (int k = 0; k < 2; k++) {
+            switch (filteredYun[k]) {
+            case PINYIN_ID_AI:
+            case PINYIN_ID_AN:
+            case PINYIN_ID_AO:
+            case PINYIN_ID_EI:
+            case PINYIN_ID_EN:
+            case PINYIN_ID_ER:
+            case PINYIN_ID_OU:
+                filteredYun[k] = PINYIN_ID_VOID;
+                break;
+            }
+        }
+        yun = filteredYun;
+    }
+
     do {
         if (sheng == PINYIN_ID_VOID || yun[0] == PINYIN_ID_VOID)
             break;
